@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>go2Navigation</name>
+  <version>0.0.0</version>
+  <description>Unitree Go2 SDK test</description>
+  <maintainer email="you@todo.com">you</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>unitree_api</depend>
+  <depend>unitree_go</depend>
+  <depend>unitree_hg</depend>
+  <depend>unitree_sdk2</depend>
+</package>
