@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- args -->
+  <arg name="use_gui" default="true"/>
+  <arg name="use_rviz" default="true"/>
+
+  <!-- paths -->
+  <let name="xacro_file"
+       value="$(find-pkg-share go2_navigation)/urdf/go2_navigation.urdf.xacro"/>
+
+  <!-- joint state publisher (GUI optional) -->
+  <node pkg="joint_state_publisher_gui"
+        exec="joint_state_publisher_gui"
+        name="joint_state_publisher_gui"
+        if="$(var use_gui)"/>
+
+  <node pkg="joint_state_publisher"
+        exec="joint_state_publisher"
+        name="joint_state_publisher"
+        unless="$(var use_gui)"/>
+
+  <!-- robot_state_publisher (robot_description must be a param on this node) -->
+  <node pkg="robot_state_publisher"
+        exec="robot_state_publisher"
+        name="robot_state_publisher"
+        output="screen">
+    <param name="robot_description"
+           value="$(command 'xacro $(var xacro_file)')"/>
+    <param name="publish_frequency" value="1000.0"/>
+  </node>
+
+  <!-- RViz2 -->
+  <node pkg="rviz2"
+        exec="rviz2"
+        name="rviz2"
+        output="screen"
+        if="$(var use_rviz)"
+        args="-d $(find-pkg-share go2_navigation)/launch/check_joint.rviz"/>
+</launch>
