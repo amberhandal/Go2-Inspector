@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(go2_navigation)
 
 find_package(ament_cmake REQUIRED)
+find_package(unitree_sdk2 REQUIRED)
 
 add_executable(go2SportTest src/go2SportTest.cpp)
 
@@ -16,7 +17,7 @@ target_link_directories(go2SportTest PRIVATE
   /opt/unitree_robotics/lib
 )
 
-# Link Unitree SDK2 (name may differ; see below)
+# Link Unitree SDK2
 target_link_libraries(go2SportTest
   unitree_sdk2
   ddscxx

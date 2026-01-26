@@ -1,6 +1,6 @@
 <launch>
 
-  <!-- Start Gazebo (ROS 2 gazebo_ros) -->
+  <!-- Start Gazebo -->
   <include file="$(find-pkg-share gazebo_ros)/launch/gazebo.launch.py"/>
 
   <!-- Static TF: base_link -> base_footprint -->
@@ -17,7 +17,7 @@
         output="screen"
         args="-entity go2_description -file $(find-pkg-share go2_navigation)/urdf/go2_description.urdf"/>
 
-  <!-- Publish /calibrated once (ROS 2 replacement for rostopic pub) -->
+  <!-- Publish /calibrated once -->
   <executable cmd="ros2 topic pub -1 /calibrated std_msgs/msg/Bool '{data: true}'"
               output="screen"/>
 
