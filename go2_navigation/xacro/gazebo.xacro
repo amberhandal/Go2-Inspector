@@ -13,7 +13,7 @@
         <plugin name="3dplot" filename="libLinkPlot3DPlugin.so">
             <frequency>10</frequency>
             <plot>
-                <link>base</link>
+                <link>base_link</link>
                 <pose>0 0 0 0 0 0</pose>
                 <material>Gazebo/Yellow</material>
             </plot>
@@ -132,7 +132,7 @@
         </visual>
     </gazebo>
 
-    <gazebo reference="base">
+    <gazebo reference="base_link">
         <turnGravityOff>false</turnGravityOff>
     </gazebo>
 

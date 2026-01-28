@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <robot name="go2_navigation">
-  <link name="base">
+  <link name="base_link">
     <inertial>
       <origin xyz="0.021112 0 -0.005366" rpy="0 0 0" />
       <mass value="6.921" />
@@ -9,7 +9,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://go2_navigation/meshes/base.dae" />
+        <mesh filename="package://go2_navigation/meshes/base_link.dae" />
       </geometry>
       <material name="深色橡胶_001-effect"><color rgba="0.6717055 0.6924257 0.7742702 1" /></material><material name="白色logo_001-effect"><color rgba="1 1 1 1" /></material><material name="黑色贴纸_007-effect"><color rgba="0.009018 0.009018 0.009018 1" /></material><material name="黑色金属_007-effect"><color rgba="0.01341 0.01341 0.01341 1" /></material><material name="黑色塑料_003-effect"><color rgba="0.023455 0.023455 0.023455 1" /></material></visual>
     <collision>
@@ -34,7 +34,7 @@
   </link>
   <joint name="Head_upper_joint" type="fixed" dont_collapse="true">
     <origin xyz="0.285 0 0.01" rpy="0 0 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="Head_upper" />
     <axis xyz="0 0 0" />
   </joint>
@@ -78,7 +78,7 @@
   </link>
   <joint name="FL_hip_joint" type="revolute">
     <origin xyz="0.1934 0.0465 0" rpy="0 0 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="FL_hip" />
     <axis xyz="1 0 0" />
     <limit lower="-1.0472" upper="1.0472" effort="23.7" velocity="30.1" />
@@ -92,7 +92,7 @@
   </link>
   <joint name="FL_hip_rotor_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.11215 0.04675 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="FL_hip_rotor" />
   </joint>
   <link name="FL_thigh">
@@ -245,7 +245,7 @@
   </link>
   <joint name="FR_hip_joint" type="revolute">
     <origin xyz="0.1934 -0.0465 0" rpy="0 0 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="FR_hip" />
     <axis xyz="1 0 0" />
     <limit lower="-1.0472" upper="1.0472" effort="23.7" velocity="30.1" />
@@ -259,7 +259,7 @@
   </link>
   <joint name="FR_hip_rotor_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.11215 -0.04675 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="FR_hip_rotor" />
   </joint>
   <link name="FR_thigh">
@@ -412,7 +412,7 @@
   </link>
   <joint name="RL_hip_joint" type="revolute">
     <origin xyz="-0.1934 0.0465 0" rpy="0 0 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="RL_hip" />
     <axis xyz="1 0 0" />
     <limit lower="-1.0472" upper="1.0472" effort="23.7" velocity="30.1" />
@@ -426,7 +426,7 @@
   </link>
   <joint name="RL_hip_rotor_joint" type="fixed">
     <origin rpy="0 0 0" xyz="-0.11215 0.04675 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="RL_hip_rotor" />
   </joint>
   <link name="RL_thigh">
@@ -579,7 +579,7 @@
   </link>
   <joint name="RR_hip_joint" type="revolute">
     <origin xyz="-0.1934 -0.0465 0" rpy="0 0 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="RR_hip" />
     <axis xyz="1 0 0" />
     <limit lower="-1.0472" upper="1.0472" effort="23.7" velocity="30.1" />
@@ -593,7 +593,7 @@
   </link>
   <joint name="RR_hip_rotor_joint" type="fixed">
     <origin rpy="0 0 0" xyz="-0.11215 -0.04675 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="RR_hip_rotor" />
   </joint>
   <link name="RR_thigh">
@@ -734,7 +734,7 @@
   </link>
   <joint name="imu_joint" type="fixed">
     <origin xyz="-0.02557 0 0.04232" rpy="0 0 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="imu" />
     <axis xyz="0 0 0" />
   </joint>
@@ -747,13 +747,13 @@
   </link>
   <joint name="radar_joint" type="fixed">
     <origin xyz="0.28945 0 -0.046825" rpy="0 2.8782 0" />
-    <parent link="base" />
+    <parent link="base_link" />
     <child link="radar" />
     <axis xyz="0 0 0" />
   </joint>
   <joint name="front_camera_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0.32715 -0.00003 0.04297" />
-      <parent link="base" />
+      <parent link="base_link" />
       <child link="front_camera" />
   </joint>
   <link name="front_camera">

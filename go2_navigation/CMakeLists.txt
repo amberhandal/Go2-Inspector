@@ -3,6 +3,13 @@ project(go2_navigation)
 
 find_package(ament_cmake REQUIRED)
 find_package(unitree_sdk2 REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
+add_executable(odom_tf_bridge src/odom_tf_bridge.cpp)
+ament_target_dependencies(odom_tf_bridge rclcpp nav_msgs tf2_ros geometry_msgs)
 
 add_executable(go2SportTest src/go2SportTest.cpp)
 
@@ -27,7 +34,9 @@ target_link_libraries(go2SportTest
 
 ament_target_dependencies(go2SportTest)
 
-install(TARGETS go2SportTest
+install(TARGETS 
+  go2SportTest
+  odom_tf_bridge
   DESTINATION lib/${PROJECT_NAME}
 )
 

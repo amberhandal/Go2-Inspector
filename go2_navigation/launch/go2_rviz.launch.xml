@@ -29,6 +29,15 @@
     <param name="publish_frequency" value="1000.0"/>
   </node>
 
+  <node pkg="go2_navigation"
+        exec="odom_tf_bridge"
+        name="odom_tf_bridge"
+        output="screen">
+    <param name="odom_topic" value="/utlidar/robot_odom"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="base_frame" value="base_link"/>
+  </node>
+
   <!-- RViz2 -->
   <node pkg="rviz2"
         exec="rviz2"

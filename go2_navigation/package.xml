@@ -15,12 +15,16 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
   <exec_depend>xacro</exec_depend>
+  <exec_depend>unitree_sdk2</exec_depend>
 
+  <depend>rclcpp</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>unitree_api</depend>
   <depend>unitree_go</depend>
   <depend>unitree_hg</depend>
+
   <build_depend>unitree_sdk2</build_depend>
-  <exec_depend>unitree_sdk2</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
