@@ -1,0 +1,24 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="cmd_vel_topic" default="/cmd_vel" description="Topic for velocity commands"/>
+  <arg name="odom_topic" default="/utlidar/robot_odom" description="Odometry topic from Unitree"/>
+  <arg name="send_standup" default="true" description="Send standup command on start"/>
+  
+  <!-- Odometry to TF bridge -->
+  <node pkg="go2_navigation" exec="odom_tf_bridge" name="odom_tf_bridge" output="screen">
+    <param name="odom_topic" value="$(var odom_topic)"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="base_frame" value="base_link"/>
+    <param name="publish_tf" value="true"/>
+  </node>
+
+  <!-- Cmd_vel to Sport API bridge -->
+  <node pkg="go2_navigation" exec="cmdvel_to_sport_bridge" name="cmdvel_to_sport_bridge" output="screen">
+    <param name="cmd_vel_topic" value="$(var cmd_vel_topic)"/>
+    <param name="publish_rate_hz" value="50.0"/>
+    <param name="cmd_timeout_sec" value="0.25"/>
+    <param name="send_standup_on_start" value="$(var send_standup)"/>
+    <param name="max_linear_vel" value="1.0"/>
+    <param name="max_angular_vel" value="1.5"/>
+  </node>
+</launch>

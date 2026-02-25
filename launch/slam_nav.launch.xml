@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="use_rviz" default="true"/>
+  <arg name="use_slam" default="true"/>
+  <arg name="use_nav2" default="true"/>
+  <arg name="rviz_config" default="$(find-pkg-share go2_navigation)/config/nav2_view.rviz"/>
+  <arg name="nav2_params" default="$(find-pkg-share go2_navigation)/config/nav2_params.yaml"/>
+
+  <!-- Path to URDF -->
+  <let name="urdf_file"
+       value="$(find-pkg-share go2_navigation)/urdf/go2_navigation.urdf.xacro"/>
+
+  <!-- Robot State Publisher -->
+  <node pkg="robot_state_publisher"
+        exec="robot_state_publisher"
+        name="robot_state_publisher"
+        output="screen">
+    <param name="robot_description"
+           value="$(command 'xacro $(var urdf_file)')"/>
+    <param name="publish_frequency" value="100.0"/>
+  </node>
+
+  <!-- Joint State Bridge -->
+  <node pkg="go2_navigation"
+        exec="joint_state_bridge"
+        name="joint_state_bridge"
+        output="screen">
+    <param name="lowstate_topic" value="/lowstate"/>
+    <param name="joint_states_topic" value="/joint_states"/>
+  </node>
+
+  <!-- Odom TF Bridge -->
+  <node pkg="go2_navigation"
+        exec="odom_tf_bridge"
+        name="odom_tf_bridge"
+        output="screen">
+    <param name="odom_topic" value="/utlidar/robot_odom"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="base_frame" value="base_link"/>
+  </node>
+
+  <!-- Static transform: base_link -> utlidar_lidar -->
+  <node pkg="tf2_ros"
+        exec="static_transform_publisher"
+        name="base_to_lidar_tf"
+        args="0.28945 0.0 -0.046825 0 0 0 base_link utlidar_lidar"
+        output="screen"/>
+
+  <!-- PointCloud to LaserScan converter -->
+  <node pkg="go2_navigation"
+        exec="pointcloud_to_scan"
+        name="pointcloud_to_scan"
+        output="screen">
+    <param name="cloud_topic" value="/utlidar/cloud"/>
+    <param name="scan_topic" value="/scan"/>
+    <param name="scan_frame" value="utlidar_lidar"/>
+    <param name="min_height" value="-0.1"/>
+    <param name="max_height" value="0.5"/>
+    <param name="range_min" value="0.15"/>
+    <param name="range_max" value="25.0"/>
+  </node>
+
+  <!-- SLAM Toolbox -->
+  <node pkg="slam_toolbox"
+        exec="sync_slam_toolbox_node"
+        name="slam_toolbox"
+        output="screen"
+        if="$(var use_slam)">
+    <param name="odom_frame" value="odom"/>
+    <param name="map_frame" value="map"/>
+    <param name="base_frame" value="base_link"/>
+    <param name="scan_topic" value="/scan"/>
+    <param name="mode" value="mapping"/>
+    <param name="resolution" value="0.05"/>
+    <param name="max_laser_range" value="25.0"/>
+    <param name="minimum_time_interval" value="0.5"/>
+    <param name="transform_publish_period" value="0.02"/>
+    <param name="map_update_interval" value="5.0"/>
+    <param name="use_scan_matching" value="true"/>
+    <param name="use_scan_barycenter" value="true"/>
+    <param name="minimum_travel_distance" value="0.3"/>
+    <param name="minimum_travel_heading" value="0.3"/>
+    <param name="transform_timeout" value="0.2"/>
+    <param name="tf_buffer_duration" value="30.0"/>
+  </node>
+
+  <!-- SLAM Lifecycle Manager - starts SLAM first -->
+  <node pkg="nav2_lifecycle_manager"
+        exec="lifecycle_manager"
+        name="lifecycle_manager_slam"
+        output="screen"
+        if="$(var use_slam)">
+    <param name="autostart" value="true"/>
+    <param name="node_names" value="['slam_toolbox']"/>
+  </node>
+
+  <!-- Nav2 Controller Server -->
+  <node pkg="nav2_controller"
+        exec="controller_server"
+        name="controller_server"
+        output="screen"
+        if="$(var use_nav2)">
+    <param from="$(var nav2_params)"/>
+  </node>
+
+  <!-- Nav2 Planner Server -->
+  <node pkg="nav2_planner"
+        exec="planner_server"
+        name="planner_server"
+        output="screen"
+        if="$(var use_nav2)">
+    <param from="$(var nav2_params)"/>
+  </node>
+
+  <!-- Nav2 Behavior Server -->
+  <node pkg="nav2_behaviors"
+        exec="behavior_server"
+        name="behavior_server"
+        output="screen"
+        if="$(var use_nav2)">
+    <param from="$(var nav2_params)"/>
+  </node>
+
+  <!-- Nav2 BT Navigator -->
+  <node pkg="nav2_bt_navigator"
+        exec="bt_navigator"
+        name="bt_navigator"
+        output="screen"
+        if="$(var use_nav2)">
+    <param from="$(var nav2_params)"/>
+  </node>
+
+  <!-- Nav2 Lifecycle Manager -->
+  <node pkg="nav2_lifecycle_manager"
+        exec="lifecycle_manager"
+        name="lifecycle_manager_navigation"
+        output="screen"
+        if="$(var use_nav2)">
+    <param name="autostart" value="true"/>
+    <param name="node_names" value="['controller_server', 'planner_server', 'behavior_server', 'bt_navigator']"/>
+  </node>
+
+  <!-- CmdVel to Sport Bridge -->
+  <node pkg="go2_navigation"
+        exec="cmdvel_to_sport_bridge"
+        name="cmdvel_to_sport_bridge"
+        output="screen"
+        if="$(var use_nav2)">
+    <param name="cmd_vel_topic" value="/cmd_vel"/>
+    <param name="use_twist_stamped" value="true"/>
+    <param name="send_standup_on_start" value="false"/>
+  </node>
+
+  <!-- RViz2 -->
+  <node pkg="rviz2"
+        exec="rviz2"
+        name="rviz2"
+        output="screen"
+        if="$(var use_rviz)"
+        args="-d $(var rviz_config)"/>
+</launch>
