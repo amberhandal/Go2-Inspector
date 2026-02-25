@@ -1,0 +1,322 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="use_rviz" default="true"/>
+  <arg name="use_slam" default="false"/>
+  <arg name="use_rtabmap" default="true"/>
+  <arg name="use_nav2" default="true"/>
+  <arg name="use_rtabmap_viz" default="false"/>
+  <arg name="use_pointcloud_refiner" default="true"/>
+  <arg name="use_explore" default="false"/>
+  <arg name="rviz_config" default="$(find-pkg-share go2_navigation)/config/nav2_view.rviz"/>
+  <arg name="nav2_params" default="$(find-pkg-share go2_navigation)/config/nav2_params_rtabmap.yaml"/>
+  <arg name="database_path" default="~/.ros/rtabmap.db"/>
+
+  <!-- Path to URDF -->
+  <let name="urdf_file"
+       value="$(find-pkg-share go2_navigation)/urdf/go2_navigation.urdf.xacro"/>
+
+  <!-- Robot State Publisher -->
+  <node pkg="robot_state_publisher"
+        exec="robot_state_publisher"
+        name="robot_state_publisher"
+        output="screen">
+    <param name="robot_description"
+           value="$(command 'xacro $(var urdf_file)')"/>
+    <param name="publish_frequency" value="100.0"/>
+  </node>
+
+  <!-- Joint State Bridge -->
+  <node pkg="go2_navigation"
+        exec="joint_state_bridge"
+        name="joint_state_bridge"
+        output="screen">
+    <param name="lowstate_topic" value="/lowstate"/>
+    <param name="joint_states_topic" value="/joint_states"/>
+  </node>
+
+  <!-- Odom TF Bridge - publishes odom -> base_link transform -->
+  <node pkg="go2_navigation"
+        exec="odom_tf_bridge"
+        name="odom_tf_bridge"
+        output="screen">
+    <param name="odom_topic" value="/utlidar/robot_odom"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="base_frame" value="base_link"/>
+  </node>
+
+  <!-- Static transform: base_link -> utlidar_lidar -->
+  <node pkg="tf2_ros"
+        exec="static_transform_publisher"
+        name="base_to_lidar_tf"
+        args="0.28945 0.0 -0.046825 0 2.8782 0 base_link utlidar_lidar"
+        output="screen"/>
+
+  <!-- Static transform: base_link -> camera_link -->
+  <node pkg="tf2_ros"
+        exec="static_transform_publisher"
+        name="base_to_camera_tf"
+        args="0.3 0.0 0.1 0 0 0 base_link camera_link"
+        output="screen"/>
+
+  <!-- PointCloud to LaserScan for SLAM Toolbox (if used)
+       Lidar is ~0.28m above ground. To detect obstacles 0.05m to 1.0m above ground:
+       min_height = 0.05 - 0.28 = -0.23m (relative to lidar)
+       max_height = 1.0 - 0.28 = 0.72m (relative to lidar)
+  -->
+  <group if="$(var use_slam)">
+    <node pkg="pointcloud_to_laserscan"
+          exec="pointcloud_to_laserscan_node"
+          name="pointcloud_to_laserscan"
+          output="screen">
+      <remap from="cloud_in" to="/utlidar/cloud_deskewed"/>
+      <remap from="scan" to="/scan"/>
+      <param name="target_frame" value="utlidar_lidar"/>
+      <param name="min_height" value="-0.23"/>
+      <param name="max_height" value="0.72"/>
+      <param name="range_min" value="0.15"/>
+      <param name="range_max" value="10.0"/>
+      <param name="angle_min" value="-3.14159"/>
+      <param name="angle_max" value="3.14159"/>
+      <param name="angle_increment" value="0.00872"/>
+      <param name="scan_time" value="0.0667"/>
+      <param name="use_inf" value="true"/>
+    </node>
+  </group>
+
+  <!-- ==================== SLAM Toolbox (2D SLAM - optional) ==================== -->
+  <group if="$(var use_slam)">
+    <node pkg="slam_toolbox"
+          exec="async_slam_toolbox_node"
+          name="slam_toolbox"
+          output="screen">
+      <param name="odom_frame" value="odom"/>
+      <param name="map_frame" value="map"/>
+      <param name="base_frame" value="base_link"/>
+      <param name="scan_topic" value="/scan"/>
+      <param name="mode" value="mapping"/>
+      <param name="resolution" value="0.05"/>
+      <param name="max_laser_range" value="10.0"/>
+      <param name="minimum_time_interval" value="0.5"/>
+      <param name="transform_publish_period" value="0.02"/>
+      <param name="map_update_interval" value="2.0"/>
+      <param name="use_scan_matching" value="true"/>
+      <param name="use_scan_barycenter" value="true"/>
+      <param name="minimum_travel_distance" value="0.2"/>
+      <param name="minimum_travel_heading" value="0.2"/>
+      <param name="transform_timeout" value="0.2"/>
+      <param name="tf_buffer_duration" value="30.0"/>
+      <param name="scan_queue_size" value="10"/>
+    </node>
+
+    <!-- SLAM Lifecycle Manager -->
+    <node pkg="nav2_lifecycle_manager"
+          exec="lifecycle_manager"
+          name="lifecycle_manager_slam"
+          output="screen">
+      <param name="autostart" value="true"/>
+      <param name="node_names" value="['slam_toolbox']"/>
+    </node>
+  </group>
+
+  <!-- ==================== RTAB-Map (3D SLAM) ==================== -->
+  <group if="$(var use_rtabmap)">
+    <!-- Re-stamp point cloud with current time (Go2 timestamps may be off) -->
+    <node pkg="go2_navigation"
+          exec="pointcloud_restamper.py"
+          name="pointcloud_restamper"
+          output="screen">
+      <remap from="input" to="/utlidar/cloud_deskewed"/>
+      <remap from="output" to="/utlidar/cloud_restamped"/>
+    </node>
+
+    <!-- Point Cloud Refiner - filters ground and clusters obstacles -->
+    <group if="$(var use_pointcloud_refiner)">
+      <node pkg="go2_navigation"
+            exec="pointcloud_refiner"
+            name="pointcloud_refiner"
+            output="screen">
+        <param name="input_topic" value="/utlidar/cloud_restamped"/>
+        <param name="output_topic" value="/refined_cloud"/>
+        <param name="voxel_size" value="0.05"/>
+        <param name="cluster_tolerance" value="0.1"/>
+        <param name="min_cluster_size" value="3"/>
+        <param name="max_cluster_size" value="25000"/>
+        <param name="min_height" value="-0.3"/>
+        <param name="max_height" value="1.5"/>
+        <param name="use_intensity_marking" value="true"/>
+      </node>
+    </group>
+
+    <!-- RTAB-Map SLAM - using peer's working configuration -->
+    <node pkg="rtabmap_slam" exec="rtabmap" name="rtabmap" output="screen"
+          args="--delete_db_on_start
+                --Rtabmap/DetectionRate 1.0
+                --RGBD/NeighborLinkRefining true
+                --RGBD/ProximityBySpace true
+                --RGBD/ProximityMaxGraphDepth 0
+                --RGBD/ProximityPathMaxNeighbors 1
+                --RGBD/AngularUpdate 0.05
+                --RGBD/LinearUpdate 0.05
+                --RGBD/CreateOccupancyGrid true
+                --Mem/RehearsalSimilarity 0.30
+                --Mem/NotLinkedNodesKept false
+                --Mem/STMSize 30
+                --Mem/LaserScanNormalK 20
+                --Reg/Strategy 1
+                --Icp/VoxelSize 0.1
+                --Icp/PointToPlaneK 20
+                --Icp/PointToPlaneRadius 0
+                --Icp/PointToPlane true
+                --Icp/Iterations 10
+                --Icp/Epsilon 0.001
+                --Icp/MaxTranslation 3
+                --Icp/MaxCorrespondenceDistance 1
+                --Icp/Strategy 1
+                --Icp/OutlierRatio 0.7
+                --Icp/CorrespondenceRatio 0.2
+                --Grid/Sensor 0
+                --Grid/RayTracing true
+                --Grid/CellSize 0.05
+                --Grid/RangeMax 5.0
+                --Grid/RangeMin 0.2
+                --Grid/MaxGroundHeight 0.02
+                --Grid/MaxObstacleHeight 1.5
+                --Grid/NormalsSegmentation false
+                --Grid/ClusterRadius 0.1
+                --Grid/MinClusterSize 10">
+      
+      <!-- KEY CHANGE: Use lidar frame directly like peer does -->
+      <param name="frame_id" value="utlidar_lidar"/>
+      <param name="odom_frame_id" value="odom"/>
+      <param name="map_frame_id" value="map"/>
+      
+      <!-- Subscribe to scan cloud (not depth/RGB) -->
+      <param name="subscribe_depth" value="false"/>
+      <param name="subscribe_rgb" value="false"/>
+      <param name="subscribe_scan_cloud" value="true"/>
+      <param name="subscribe_scan" value="false"/>
+      <param name="subscribe_stereo" value="false"/>
+      <param name="subscribe_rgbd" value="false"/>
+      
+      <!-- Sync and timing - increased queue sizes like peer -->
+      <param name="approx_sync" value="true"/>
+      <param name="wait_for_transform" value="0.3"/>
+      <param name="sync_queue_size" value="50"/>
+      <param name="topic_queue_size" value="50"/>
+      <param name="queue_size" value="50"/>
+      
+      <!-- Publish map continuously -->
+      <param name="map_always_update" value="true"/>
+      <param name="map_empty_ray_tracing" value="true"/>
+      
+      <!-- Use refined cloud if available, otherwise use restamped deskewed cloud -->
+      <remap from="scan_cloud" to="/refined_cloud"/>
+      
+      <!-- Odometry from Go2 -->
+      <remap from="odom" to="/utlidar/robot_odom"/>
+      
+      <!-- Database location -->
+      <param name="database_path" value="$(var database_path)"/>
+    </node>
+
+    <!-- Point cloud assembler for 3D visualization -->
+    <node pkg="rtabmap_util" exec="point_cloud_assembler" name="point_cloud_assembler" output="screen">
+      <remap from="cloud" to="/refined_cloud"/>
+      <remap from="odom" to="/utlidar/robot_odom"/>
+      <param name="max_clouds" value="20"/>
+      <param name="fixed_frame_id" value="map"/>
+      <param name="assembling_time" value="0.0"/>
+      <param name="queue_size" value="50"/>
+    </node>
+  </group>
+
+  <!-- RTAB-Map visualization (optional) -->
+  <group if="$(var use_rtabmap_viz)">
+    <node pkg="rtabmap_viz" exec="rtabmap_viz" name="rtabmap_viz" output="screen">
+      <param name="frame_id" value="utlidar_lidar"/>
+      <param name="odom_frame_id" value="odom"/>
+      <param name="subscribe_odom_info" value="false"/>
+      <param name="subscribe_scan_cloud" value="true"/>
+      <param name="approx_sync" value="true"/>
+      <remap from="scan_cloud" to="/refined_cloud"/>
+      <remap from="odom" to="/utlidar/robot_odom"/>
+    </node>
+  </group>
+
+  <!-- ==================== Nav2 Navigation Stack ==================== -->
+  <group if="$(var use_nav2)">
+    <!-- Nav2 Controller Server -->
+    <node pkg="nav2_controller"
+          exec="controller_server"
+          name="controller_server"
+          output="screen">
+      <param from="$(var nav2_params)"/>
+    </node>
+
+    <!-- Nav2 Planner Server -->
+    <node pkg="nav2_planner"
+          exec="planner_server"
+          name="planner_server"
+          output="screen">
+      <param from="$(var nav2_params)"/>
+    </node>
+
+    <!-- Nav2 Behavior Server -->
+    <node pkg="nav2_behaviors"
+          exec="behavior_server"
+          name="behavior_server"
+          output="screen">
+      <param from="$(var nav2_params)"/>
+    </node>
+
+    <!-- Nav2 BT Navigator -->
+    <node pkg="nav2_bt_navigator"
+          exec="bt_navigator"
+          name="bt_navigator"
+          output="screen">
+      <param from="$(var nav2_params)"/>
+    </node>
+
+    <!-- Nav2 Lifecycle Manager -->
+    <node pkg="nav2_lifecycle_manager"
+          exec="lifecycle_manager"
+          name="lifecycle_manager_navigation"
+          output="screen">
+      <param name="autostart" value="true"/>
+      <param name="node_names" value="['controller_server', 'planner_server', 'behavior_server', 'bt_navigator']"/>
+    </node>
+
+    <!-- CmdVel to Sport Bridge -->
+    <node pkg="go2_navigation"
+          exec="cmdvel_to_sport_bridge"
+          name="cmdvel_to_sport_bridge"
+          output="screen">
+      <param name="cmd_vel_topic" value="/cmd_vel"/>
+      <param name="use_twist_stamped" value="true"/>
+      <param name="send_standup_on_start" value="false"/>
+    </node>
+  </group>
+
+  <!-- ==================== Frontier Explorer (Autonomous Mapping) ==================== -->
+  <group if="$(var use_explore)">
+    <node pkg="go2_navigation"
+          exec="frontier_explorer"
+          name="frontier_explorer"
+          output="screen">
+      <param name="min_frontier_size" value="5"/>
+      <param name="exploration_radius" value="10.0"/>
+      <param name="min_goal_distance" value="0.5"/>
+      <param name="goal_timeout" value="60.0"/>
+    </node>
+  </group>
+
+  <!-- RViz2 -->
+  <group if="$(var use_rviz)">
+    <node pkg="rviz2"
+          exec="rviz2"
+          name="rviz2"
+          output="screen"
+          args="-d $(var rviz_config)"/>
+  </group>
+</launch>

@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="use_sim" default="false" description="Use joint_state_publisher_gui (for testing without robot)"/>
+  <arg name="use_rviz" default="true"/>
+  
+  <!-- Path to URDF -->
+  <let name="urdf_file"
+       value="$(find-pkg-share go2_navigation)/urdf/go2_navigation.urdf.xacro"/>
+
+  <!-- Robot State Publisher - publishes TF for all joints based on URDF -->
+  <node pkg="robot_state_publisher"
+        exec="robot_state_publisher"
+        name="robot_state_publisher"
+        output="screen">
+    <param name="robot_description"
+           value="$(command 'xacro $(var urdf_file)')"/>
+    <param name="publish_frequency" value="100.0"/>
+  </node>
+
+  <!-- Joint State Publisher GUI - ONLY for testing without real robot -->
+  <node pkg="joint_state_publisher_gui"
+        exec="joint_state_publisher_gui"
+        name="joint_state_publisher_gui"
+        if="$(var use_sim)"/>
+
+  <!-- Joint State Bridge - converts Unitree lowstate to joint_states (real robot only) -->
+  <node pkg="go2_navigation"
+        exec="joint_state_bridge"
+        name="joint_state_bridge"
+        output="screen"
+        unless="$(var use_sim)">
+    <param name="lowstate_topic" value="/lowstate"/>
+    <param name="joint_states_topic" value="/joint_states"/>
+  </node>
+
+  <!-- Odom TF Bridge - publishes odom -> base_link transform -->
+  <node pkg="go2_navigation"
+        exec="odom_tf_bridge"
+        name="odom_tf_bridge"
+        output="screen">
+    <param name="odom_topic" value="/utlidar/robot_odom"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="base_frame" value="base_link"/>
+  </node>
+
+  <!-- RViz2 -->
+  <node pkg="rviz2"
+        exec="rviz2"
+        name="rviz2"
+        output="screen"
+        if="$(var use_rviz)"
+        args="-d $(find-pkg-share go2_navigation)/config/go2_view.rviz"/>
+</launch>

@@ -1,0 +1,24 @@
+<launch>
+
+  <!-- Start Gazebo -->
+  <include file="$(find-pkg-share gazebo_ros)/launch/gazebo.launch.py"/>
+
+  <!-- Static TF: base_link -> base_footprint -->
+  <node pkg="tf2_ros"
+        exec="static_transform_publisher"
+        name="tf_footprint_base"
+        args="0 0 0 0 0 0 base_link base_footprint"
+        output="screen"/>
+
+  <!-- Spawn URDF into Gazebo -->
+  <node pkg="gazebo_ros"
+        exec="spawn_entity.py"
+        name="spawn_model"
+        output="screen"
+        args="-entity go2_description -file $(find-pkg-share go2_navigation)/urdf/go2_description.urdf"/>
+
+  <!-- Publish /calibrated once -->
+  <executable cmd="ros2 topic pub -1 /calibrated std_msgs/msg/Bool '{data: true}'"
+              output="screen"/>
+
+</launch>
