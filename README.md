@@ -1,4 +1,5 @@
 # Go2 Navigation & Inspection System
+[Portfolio Link] (https://www.amberhandal.com/projects/watchdog)
 
 Autonomous building inspection system for the **Unitree Go2 quadruped robot**. The robot autonomously explores indoor environments using frontier-based exploration, builds 3D maps with RTAB-Map SLAM, and detects safety-critical objects (fire extinguishers, exit signs, etc.) using SAM 3 segmentation. After each run, the system exports annotated 2D floor plans, 3D point cloud maps with markers, and PDF comparison reports tracking changes between inspections.
 
