@@ -4,6 +4,8 @@ Autonomous building inspection system for the **Unitree Go2 quadruped robot**. T
 
 Built on ROS 2 Kilted with Nav2, RTAB-Map, and a RealSense depth camera mounted on the Go2's head.
 
+![SAM_Labeling](https://github.com/user-attachments/assets/3a59c5c3-a3bc-4718-8981-0c714aa0d8dc)
+
 ---
 
 ## Table of Contents
@@ -25,7 +27,11 @@ Built on ROS 2 Kilted with Nav2, RTAB-Map, and a RealSense depth camera mounted 
 ---
 
 ## System Overview
-[INSERT DIAGRAM]
+### Overall System
+[INSERT LOW-LEVEL DIAGRAM]
+
+### Perception Pipeline
+<img width="1700" height="2254" alt="Perception Pipeline" src="https://github.com/user-attachments/assets/6ca4e9f3-5492-4d52-8073-e91f278fdbb6" />
 
 **Key capabilities:**
 - 3D SLAM using lidar point clouds (RTAB-Map with ICP registration)
