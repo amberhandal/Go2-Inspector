@@ -1,8 +1,11 @@
 # Go2 Navigation & Inspection System
+[Portfolio Link] (https://www.amberhandal.com/projects/watchdog)
 
 Autonomous building inspection system for the **Unitree Go2 quadruped robot**. The robot autonomously explores indoor environments using frontier-based exploration, builds 3D maps with RTAB-Map SLAM, and detects safety-critical objects (fire extinguishers, exit signs, etc.) using SAM 3 segmentation. After each run, the system exports annotated 2D floor plans, 3D point cloud maps with markers, and PDF comparison reports tracking changes between inspections.
 
 Built on ROS 2 Kilted with Nav2, RTAB-Map, and a RealSense depth camera mounted on the Go2's head.
+
+![SAM_Labeling](https://github.com/user-attachments/assets/3a59c5c3-a3bc-4718-8981-0c714aa0d8dc)
 
 ---
 
@@ -25,7 +28,11 @@ Built on ROS 2 Kilted with Nav2, RTAB-Map, and a RealSense depth camera mounted 
 ---
 
 ## System Overview
-[INSERT DIAGRAM]
+### Overall System
+[INSERT LOW-LEVEL DIAGRAM]
+
+### Perception Pipeline
+<img width="1700" height="2254" alt="Perception Pipeline" src="https://github.com/user-attachments/assets/6ca4e9f3-5492-4d52-8073-e91f278fdbb6" />
 
 **Key capabilities:**
 - 3D SLAM using lidar point clouds (RTAB-Map with ICP registration)
@@ -337,58 +344,35 @@ Key SLAM parameters are set directly in `slam_nav_rtabmap.launch.xml`:
 
 ### C++ Nodes
 
-| Node | Description |
-|------|-------------|
-| `odom_tf_bridge` | Publishes odom → base_link TF from Go2 odometry |
-| `joint_state_bridge` | Bridges Go2 joint states to /joint_states |
-| `cmdvel_to_sport_bridge` | Converts Nav2 cmd_vel to Unitree Sport API |
-| `pointcloud_refiner` | Voxel filtering, ground removal, clustering |
-| `frontier_explorer` | Frontier-based autonomous exploration |
+Node -> Description
+`odom_tf_bridge`: Publishes odom → base_link TF from Go2 odometry 
+`joint_state_bridge`: Bridges Go2 joint states to /joint_states 
+`cmdvel_to_sport_bridge`: Converts Nav2 cmd_vel to Unitree Sport API
+`pointcloud_refiner`: Voxel filtering, ground removal, clustering
+`frontier_explorer`: Frontier-based autonomous exploration
 
 ### Python Nodes
 
-| Node | Description |
-|------|-------------|
-| `pointcloud_restamper.py` | Restamps lidar clouds with PC time |
-| `laserscan_restamper.py` | Restamps laser scans |
-| `image_restamper.py` | Restamps RGB images |
-| `camera_info_restamper.py` | Restamps camera info |
-| `depth_sync_restamper.py` | Restamps depth + camera_info with identical timestamps |
-| `inspection_node.py` | SAM 3 detection, 3D localization, change detection |
-| `change_detector.py` | Post-hoc comparison of two inspection runs |
+Node -> Description
+`pointcloud_restamper.py`: Restamps lidar clouds with PC time
+`laserscan_restamper.py`: Restamps laser scans
+`image_restamper.py`: Restamps RGB images 
+`camera_info_restamper.py`: Restamps camera info
+`depth_sync_restamper.py`: Restamps depth + camera_info with identical timestamps
+`inspection_node.py`: SAM 3 detection, 3D localization, change detection
+`change_detector.py`: Post-hoc comparison of two inspection runs
 
 ### Post-Processing Scripts
 
-| Script | Description |
-|--------|-------------|
-| `watchdog_run.py` | Full lifecycle manager with auto-export |
-| `map_export.py` | 2D annotated building floor plan generator |
-| `ply_marker_injector.py` | Adds colored markers to 3D PLY files |
-| `inspection_report.py` | PDF comparison report generator |
+Script -> Description
+`watchdog_run.py`: Full lifecycle manager with auto-export
+`map_export.py`: 2D annotated building floor plan generator
+`ply_marker_injector.py`: Adds colored markers to 3D PLY files
+`inspection_report.py`: PDF comparison report generator
 
 ### Topic Flow
 
-```
-Go2 UTLidar
-  └─> /utlidar/cloud_deskewed
-        └─> pointcloud_restamper ─> /utlidar/cloud_restamped
-              ├─> pointcloud_refiner ─> /refined_cloud ─> RTAB-Map
-              └─> pointcloud_to_laserscan ─> /scan
-                    └─> laserscan_restamper ─> /scan_restamped
-
-Go2 RealSense
-  ├─> /camera/color/image_raw
-  │     └─> image_restamper ─> /camera/color/image_restamped
-  │           └─> inspection_node (SAM 3 detection)
-  └─> /camera/aligned_depth_to_color/image_raw + camera_info
-        └─> depth_sync_restamper ─> /camera/depth_synced/{image,camera_info}
-              ├─> depth_to_pointcloud ─> /camera/depth/points_restamped
-              └─> depthimage_to_laserscan ─> /camera/scan
-
-RTAB-Map ─> /map (2D occupancy grid)
-         ─> map → odom TF
-Nav2     ─> /cmd_vel ─> cmdvel_to_sport_bridge ─> Unitree Sport API
-```
+// TODO: ADD DIAGRAM
 
 ---
 
