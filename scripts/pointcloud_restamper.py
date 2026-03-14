@@ -7,16 +7,17 @@ from sensor_msgs.msg import PointCloud2
 class PointCloudRestamper(Node):
     def __init__(self):
         super().__init__('pointcloud_restamper')
-        
+
         # QoS for Go2 DDS compatibility
         qos = QoSProfile(depth=10)
         qos.reliability = ReliabilityPolicy.BEST_EFFORT
         qos.durability = DurabilityPolicy.VOLATILE
-        
-        self.pub = self.create_publisher(PointCloud2, '/utlidar/cloud_restamped', 10)
-        self.sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.callback, qos)
 
-        self.get_logger().info('Restamping /utlidar/cloud -> /utlidar/cloud_restamped')
+        # Use relative topic names so launch file remaps work
+        self.pub = self.create_publisher(PointCloud2, 'output', 10)
+        self.sub = self.create_subscription(PointCloud2, 'input', self.callback, qos)
+
+        self.get_logger().info(f'Restamping {self.sub.topic_name} -> {self.pub.topic_name}')
     
     def callback(self, msg):
         msg.header.stamp = self.get_clock().now().to_msg()
