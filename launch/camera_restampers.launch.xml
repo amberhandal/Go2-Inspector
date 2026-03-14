@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Camera Image Restampers - Run on PC when camera runs on Go2 -->
+  
+  <!-- RGB Image Restamper -->
+  <node pkg="go2_navigation"
+        exec="image_restamper.py"
+        name="rgb_image_restamper"
+        output="screen">
+    <remap from="input" to="/camera/color/image_raw"/>
+    <remap from="output" to="/camera/color/image_restamped"/>
+  </node>
+
+  <!-- Depth Image Restamper -->
+  <node pkg="go2_navigation"
+        exec="image_restamper.py"
+        name="depth_image_restamper"
+        output="screen">
+    <remap from="input" to="/camera/aligned_depth_to_color/image_raw"/>
+    <remap from="output" to="/camera/aligned_depth_to_color/image_restamped"/>
+  </node>
+
+  <!-- Camera Info Restamper -->
+  <node pkg="go2_navigation"
+        exec="camera_info_restamper.py"
+        name="camera_info_restamper"
+        output="screen">
+    <remap from="input" to="/camera/color/camera_info"/>
+    <remap from="output" to="/camera/color/camera_info_restamped"/>
+  </node>
+</launch>
