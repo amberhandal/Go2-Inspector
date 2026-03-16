@@ -26,7 +26,7 @@ import json
 import os
 import sys
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 from fpdf import FPDF
 
@@ -116,16 +116,17 @@ class InspectionReport(FPDF):
     def __init__(self, title: str = "Go2 Inspection Report"):
         super().__init__()
         self.report_title = title
-        self.set_auto_page_break(auto=True, margin=20)
+        self.set_auto_page_break(auto=False)
+        self.set_margins(8, 8, 8)
 
     def header(self):
-        self.set_font('Helvetica', 'B', 10)
+        self.set_font('Helvetica', 'B', 8)
         self.set_text_color(100, 100, 100)
-        self.cell(0, 8, self.report_title, align='L')
-        self.ln(4)
+        self.cell(0, 5, self.report_title, align='L')
+        self.ln(2)
         self.set_draw_color(200, 200, 200)
-        self.line(10, self.get_y(), 200, self.get_y())
-        self.ln(6)
+        self.line(8, self.get_y(), 202, self.get_y())
+        self.ln(2)
 
     def footer(self):
         self.set_y(-15)
@@ -151,24 +152,22 @@ def generate_report(
     pdf.add_page()
 
     # ── Title ──
-    pdf.set_font('Helvetica', 'B', 20)
-    pdf.set_text_color(30, 30, 30)
-    pdf.cell(0, 12, 'Inspection Change Report', align='C', new_x='LMARGIN',
-             new_y='NEXT')
-    pdf.ln(2)
-
-    pdf.set_font('Helvetica', '', 10)
-    pdf.set_text_color(100, 100, 100)
-    pdf.cell(0, 6,
-             f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
-             align='C', new_x='LMARGIN', new_y='NEXT')
-    pdf.ln(8)
-
-    # ── Run Information ──
     pdf.set_font('Helvetica', 'B', 14)
     pdf.set_text_color(30, 30, 30)
-    pdf.cell(0, 10, 'Run Information', new_x='LMARGIN', new_y='NEXT')
-    pdf.ln(2)
+    pdf.cell(0, 8, 'Inspection Change Report', align='C', new_x='LMARGIN',
+             new_y='NEXT')
+    pdf.set_font('Helvetica', '', 8)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 4,
+             f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+             align='C', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(3)
+
+    # ── Run Information ──
+    pdf.set_font('Helvetica', 'B', 10)
+    pdf.set_text_color(30, 30, 30)
+    pdf.cell(0, 6, 'Run Information', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(1)
 
     prev_id = previous_data.get('run_id', 'unknown')
     curr_id = current_data.get('run_id', 'unknown')
@@ -187,27 +186,26 @@ def generate_report(
     ]
 
     col_w = [40, 75, 75]
-    pdf.set_font('Helvetica', 'B', 9)
+    pdf.set_font('Helvetica', 'B', 7)
     pdf.set_fill_color(240, 240, 240)
     for j, val in enumerate(info_rows[0]):
-        pdf.cell(col_w[j], 7, val, border=1, fill=True)
+        pdf.cell(col_w[j], 5, val, border=1, fill=True)
     pdf.ln()
 
-    pdf.set_font('Helvetica', '', 9)
+    pdf.set_font('Helvetica', '', 7)
     for row in info_rows[1:]:
-        pdf.set_font('Helvetica', 'B', 9)
-        pdf.cell(col_w[0], 7, row[0], border=1)
-        pdf.set_font('Helvetica', '', 9)
-        pdf.cell(col_w[1], 7, row[1], border=1)
-        pdf.cell(col_w[2], 7, row[2], border=1)
+        pdf.set_font('Helvetica', 'B', 7)
+        pdf.cell(col_w[0], 5, row[0], border=1)
+        pdf.set_font('Helvetica', '', 7)
+        pdf.cell(col_w[1], 5, row[1], border=1)
+        pdf.cell(col_w[2], 5, row[2], border=1)
         pdf.ln()
 
-    pdf.ln(2)
-    pdf.set_font('Helvetica', '', 9)
+    pdf.set_font('Helvetica', '', 7)
     pdf.set_text_color(80, 80, 80)
-    pdf.cell(0, 6, f'Search prompts: {", ".join(prompts)}',
+    pdf.cell(0, 4, f'Search prompts: {", ".join(prompts)}',
              new_x='LMARGIN', new_y='NEXT')
-    pdf.ln(6)
+    pdf.ln(3)
 
     # ── Summary ──
     n_new = sum(1 for c in changes if c['type'] == 'NEW')
@@ -216,66 +214,44 @@ def generate_report(
     n_unchanged = sum(1 for c in changes if c['type'] == 'UNCHANGED')
     total = len(changes)
 
-    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_font('Helvetica', 'B', 10)
     pdf.set_text_color(30, 30, 30)
-    pdf.cell(0, 10, 'Change Summary', new_x='LMARGIN', new_y='NEXT')
-    pdf.ln(2)
+    pdf.cell(0, 6, 'Change Summary', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(1)
 
     summary_items = [
-        ('UNCHANGED', n_unchanged, 'Objects found at same location'),
-        ('MOVED', n_moved, 'Objects found but position changed'),
-        ('NEW', n_new, 'Objects not in previous run'),
-        ('MISSING', n_missing, 'Objects from previous run not found'),
+        ('UNCHANGED', n_unchanged),
+        ('MOVED', n_moved),
+        ('NEW', n_new),
+        ('MISSING', n_missing),
     ]
 
-    for label, count, desc in summary_items:
+    for label, count in summary_items:
         r, g, b = CHANGE_COLORS[label]
         pdf.set_fill_color(r, g, b)
-        pdf.set_draw_color(r, g, b)
-        # Color indicator square
         x = pdf.get_x()
         y = pdf.get_y()
-        pdf.rect(x, y + 1, 4, 4, style='F')
-        pdf.set_x(x + 7)
+        pdf.rect(x, y + 0.5, 3, 3, style='F')
+        pdf.set_x(x + 5)
 
-        pdf.set_font('Helvetica', 'B', 11)
+        pdf.set_font('Helvetica', 'B', 8)
         pdf.set_text_color(r, g, b)
-        pdf.cell(20, 6, str(count))
+        pdf.cell(8, 4, str(count))
 
-        pdf.set_font('Helvetica', '', 10)
+        pdf.set_font('Helvetica', '', 8)
         pdf.set_text_color(30, 30, 30)
-        pdf.cell(25, 6, label)
+        pdf.cell(0, 4, label, new_x='LMARGIN', new_y='NEXT')
 
-        pdf.set_text_color(100, 100, 100)
-        pdf.set_font('Helvetica', 'I', 9)
-        pdf.cell(0, 6, desc, new_x='LMARGIN', new_y='NEXT')
-
-    pdf.ln(2)
-    pdf.set_draw_color(200, 200, 200)
-    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-    pdf.ln(2)
-
-    pdf.set_font('Helvetica', 'B', 11)
+    pdf.ln(1)
+    pdf.set_font('Helvetica', 'B', 8)
     pdf.set_text_color(30, 30, 30)
-    pdf.cell(0, 8, f'Total objects tracked: {total}', new_x='LMARGIN',
+    pdf.cell(0, 4, f'Total objects tracked: {total}', new_x='LMARGIN',
              new_y='NEXT')
-    pdf.ln(6)
+    pdf.ln(3)
 
     # ── Detailed Changes ──
     # Group by type, showing actionable items first
     type_order = ['MISSING', 'MOVED', 'NEW', 'UNCHANGED']
-    type_descriptions = {
-        'MISSING': 'These objects were detected in the previous run but not '
-                   'found in the current run. They may have been removed, '
-                   'obscured, or the robot did not revisit their location.',
-        'MOVED': 'These objects were found in both runs but at different '
-                 'positions. The distance column shows how far they moved.',
-        'NEW': 'These objects were detected in the current run but were not '
-               'present in the previous run.',
-        'UNCHANGED': 'These objects were found at approximately the same '
-                     'position in both runs.',
-    }
-
     for change_type in type_order:
         items = [c for c in changes if c['type'] == change_type]
         if not items:
@@ -283,15 +259,11 @@ def generate_report(
 
         r, g, b = CHANGE_COLORS[change_type]
 
-        pdf.set_font('Helvetica', 'B', 13)
+        pdf.set_font('Helvetica', 'B', 9)
         pdf.set_text_color(r, g, b)
-        pdf.cell(0, 10, f'{change_type} ({len(items)})', new_x='LMARGIN',
+        pdf.cell(0, 5, f'{change_type} ({len(items)})', new_x='LMARGIN',
                  new_y='NEXT')
-
-        pdf.set_font('Helvetica', 'I', 8)
-        pdf.set_text_color(100, 100, 100)
-        pdf.multi_cell(0, 5, type_descriptions[change_type])
-        pdf.ln(3)
+        pdf.ln(1)
 
         # Table header
         if change_type in ('MOVED', 'UNCHANGED'):
@@ -305,15 +277,15 @@ def generate_report(
             cols = [('Object', 50), ('Last Known Position', 60),
                     ('Score', 20)]
 
-        pdf.set_font('Helvetica', 'B', 8)
+        pdf.set_font('Helvetica', 'B', 7)
         pdf.set_fill_color(r, g, b)
         pdf.set_text_color(255, 255, 255)
         for col_name, col_width in cols:
-            pdf.cell(col_width, 6, col_name, border=1, fill=True)
+            pdf.cell(col_width, 4, col_name, border=1, fill=True)
         pdf.ln()
 
         # Table rows
-        pdf.set_font('Helvetica', '', 8)
+        pdf.set_font('Helvetica', '', 7)
         pdf.set_text_color(30, 30, 30)
         for i, item in enumerate(items):
             fill = i % 2 == 0
@@ -321,42 +293,41 @@ def generate_report(
                 pdf.set_fill_color(248, 248, 248)
 
             if change_type in ('MOVED', 'UNCHANGED'):
-                pdf.cell(45, 6, item['label'], border=1, fill=fill)
-                pdf.cell(50, 6, fmt_pos(item['previous_position']),
+                pdf.cell(45, 4, item['label'], border=1, fill=fill)
+                pdf.cell(50, 4, fmt_pos(item['previous_position']),
                          border=1, fill=fill)
-                pdf.cell(50, 6, fmt_pos(item['current_position']),
+                pdf.cell(50, 4, fmt_pos(item['current_position']),
                          border=1, fill=fill)
-                pdf.cell(20, 6, f"{item['distance']:.2f}m", border=1,
+                pdf.cell(20, 4, f"{item['distance']:.2f}m", border=1,
                          fill=fill)
-                pdf.cell(18, 6, f"{item['current_score']:.0%}", border=1,
+                pdf.cell(18, 4, f"{item['current_score']:.0%}", border=1,
                          fill=fill)
             elif change_type == 'NEW':
-                pdf.cell(50, 6, item['label'], border=1, fill=fill)
-                pdf.cell(55, 6, fmt_pos(item['current_position']),
+                pdf.cell(50, 4, item['label'], border=1, fill=fill)
+                pdf.cell(55, 4, fmt_pos(item['current_position']),
                          border=1, fill=fill)
-                pdf.cell(20, 6, f"{item['current_score']:.0%}", border=1,
+                pdf.cell(20, 4, f"{item['current_score']:.0%}", border=1,
                          fill=fill)
-                pdf.cell(25, 6, str(item.get('sightings', 1)), border=1,
+                pdf.cell(25, 4, str(item.get('sightings', 1)), border=1,
                          fill=fill)
             else:  # MISSING
-                pdf.cell(50, 6, item['label'], border=1, fill=fill)
-                pdf.cell(60, 6, fmt_pos(item['previous_position']),
+                pdf.cell(50, 4, item['label'], border=1, fill=fill)
+                pdf.cell(60, 4, fmt_pos(item['previous_position']),
                          border=1, fill=fill)
-                pdf.cell(20, 6, f"{item.get('previous_score', 0):.0%}",
+                pdf.cell(20, 4, f"{item.get('previous_score', 0):.0%}",
                          border=1, fill=fill)
             pdf.ln()
 
-        pdf.ln(6)
+        pdf.ln(3)
 
     # ── Recommendations ──
     if n_missing > 0 or n_moved > 0:
-        pdf.add_page()
-        pdf.set_font('Helvetica', 'B', 14)
+        pdf.set_font('Helvetica', 'B', 10)
         pdf.set_text_color(30, 30, 30)
-        pdf.cell(0, 10, 'Recommendations', new_x='LMARGIN', new_y='NEXT')
-        pdf.ln(2)
+        pdf.cell(0, 6, 'Recommendations', new_x='LMARGIN', new_y='NEXT')
+        pdf.ln(1)
 
-        pdf.set_font('Helvetica', '', 10)
+        pdf.set_font('Helvetica', '', 7)
         pdf.set_text_color(50, 50, 50)
 
         rec_num = 1
@@ -367,29 +338,25 @@ def generate_report(
             for lbl in missing_labels:
                 label_counts[lbl] = label_counts.get(lbl, 0) + 1
             for lbl, cnt in label_counts.items():
-                pdf.set_font('Helvetica', 'B', 10)
-                pdf.cell(8, 7, f'{rec_num}.')
-                pdf.set_font('Helvetica', '', 10)
+                pdf.set_font('Helvetica', 'B', 7)
+                pdf.cell(6, 4, f'{rec_num}.')
+                pdf.set_font('Helvetica', '', 7)
                 pdf.multi_cell(
-                    0, 7,
+                    0, 4,
                     f'{cnt} "{lbl}" not found in current run. '
-                    f'Verify the item(s) are still present at the '
-                    f'expected location(s) or confirm intentional removal.')
-                pdf.ln(2)
+                    f'Verify presence or confirm removal.')
                 rec_num += 1
 
         if n_moved > 0:
             moved_items = [c for c in changes if c['type'] == 'MOVED']
             for item in moved_items:
-                pdf.set_font('Helvetica', 'B', 10)
-                pdf.cell(8, 7, f'{rec_num}.')
-                pdf.set_font('Helvetica', '', 10)
+                pdf.set_font('Helvetica', 'B', 7)
+                pdf.cell(6, 4, f'{rec_num}.')
+                pdf.set_font('Helvetica', '', 7)
                 pdf.multi_cell(
-                    0, 7,
-                    f'"{item["label"]}" has moved {item["distance"]:.2f}m '
-                    f'from its previous position. Verify this relocation '
-                    f'was intentional.')
-                pdf.ln(2)
+                    0, 4,
+                    f'"{item["label"]}" moved {item["distance"]:.2f}m. '
+                    f'Verify relocation was intentional.')
                 rec_num += 1
 
     # Save
