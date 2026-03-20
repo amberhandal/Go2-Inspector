@@ -53,30 +53,10 @@ Built on ROS 2 Kilted with Nav2, RTAB-Map, and a RealSense depth camera mounted 
 sudo apt install ros-kilted-desktop
 ```
 
-### Required ROS 2 Packages
-
-```bash
-sudo apt install \
-  ros-kilted-rtabmap-ros \
-  ros-kilted-navigation2 \
-  ros-kilted-nav2-bringup \
-  ros-kilted-pointcloud-to-laserscan \
-  ros-kilted-depthimage-to-laserscan \
-  ros-kilted-depth-image-proc \
-  ros-kilted-realsense2-camera \
-  ros-kilted-realsense2-description \
-  ros-kilted-robot-state-publisher \
-  ros-kilted-joint-state-publisher \
-  ros-kilted-xacro \
-  ros-kilted-tf2-ros \
-  ros-kilted-pcl-conversions
-```
-
 ### Unitree SDK 2
 
 ```bash
-# Clone and build unitree_sdk2 for ROS 2
-# Follow: https://github.com/unitreerobotics/unitree_sdk2
+# Clone unitree_ros2 (not available via rosdep)
 cd ~/go2_ws/src
 git clone https://github.com/unitreerobotics/unitree_ros2.git
 ```
@@ -110,15 +90,15 @@ cd ~/go2_ws/src
 # Clone this package
 git clone <this-repo-url> go2_navigation
 
-# Build
+# Install all ROS 2 dependencies via rosdep
 cd ~/go2_ws
 source /opt/ros/kilted/setup.bash
+rosdep install --from-paths src --ignore-src -r -y
+
+# Build
 colcon build --packages-select go2_navigation
 
 # Source the workspace
-```
-```bash
-source /opt/ros/kilted/setup.bash
 source ~/go2_ws/install/setup.bash
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ```
