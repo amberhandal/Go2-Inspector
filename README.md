@@ -56,9 +56,12 @@ sudo apt install ros-kilted-desktop
 ### Unitree SDK 2
 
 ```bash
-# Clone unitree_ros2 (not available via rosdep)
+# Install vcstool if you don't have it
+sudo apt install python3-vcstool
+
+# Import Unitree dependencies
 cd ~/go2_ws/src
-git clone https://github.com/unitreerobotics/unitree_ros2.git
+vcs import < go2_navigation/deps.repos
 ```
 
 ### Python Dependencies
