@@ -140,6 +140,43 @@ def fmt_pos(pos: List[float]) -> str:
     return f"({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})"
 
 
+def get_recommendations(changes: List[Dict]) -> List[str]:
+    """Generate deterministic recommendations from inspection changes."""
+    recs = []
+    missing = [c for c in changes if c['type'] == 'MISSING']
+    moved = [c for c in changes if c['type'] == 'MOVED']
+
+    if missing:
+        label_counts = {}
+        for c in missing:
+            label_counts[c['label']] = label_counts.get(c['label'], 0) + 1
+        for lbl, cnt in label_counts.items():
+            recs.append(
+                f'{cnt} "{lbl}" not found in current run. '
+                f'Verify presence or confirm removal.')
+
+    for item in moved:
+        recs.append(
+            f'"{item["label"]}" moved {item["distance"]:.2f}m. '
+            f'Verify relocation was intentional.')
+
+    return recs
+
+
+def _render_recommendations(pdf, recommendations: List[str]):
+    """Render a list of recommendation strings into the PDF."""
+    pdf.set_font('Helvetica', 'B', 10)
+    pdf.set_text_color(30, 30, 30)
+    pdf.cell(0, 6, 'Recommendations', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(1)
+
+    pdf.set_text_color(50, 50, 50)
+    pdf.set_font('Helvetica', '', 7)
+    for i, rec in enumerate(recommendations, 1):
+        pdf.set_x(pdf.l_margin)
+        pdf.multi_cell(0, 4, f'{i}. {rec}')
+
+
 def generate_report(
     current_data: Dict,
     previous_data: Dict,
@@ -321,43 +358,12 @@ def generate_report(
         pdf.ln(3)
 
     # ── Recommendations ──
-    if n_missing > 0 or n_moved > 0:
-        pdf.set_font('Helvetica', 'B', 10)
-        pdf.set_text_color(30, 30, 30)
-        pdf.cell(0, 6, 'Recommendations', new_x='LMARGIN', new_y='NEXT')
-        pdf.ln(1)
-
-        pdf.set_font('Helvetica', '', 7)
-        pdf.set_text_color(50, 50, 50)
-
-        rec_num = 1
-        if n_missing > 0:
-            missing_labels = [c['label'] for c in changes
-                              if c['type'] == 'MISSING']
-            label_counts = {}
-            for lbl in missing_labels:
-                label_counts[lbl] = label_counts.get(lbl, 0) + 1
-            for lbl, cnt in label_counts.items():
-                pdf.set_font('Helvetica', 'B', 7)
-                pdf.cell(6, 4, f'{rec_num}.')
-                pdf.set_font('Helvetica', '', 7)
-                pdf.multi_cell(
-                    0, 4,
-                    f'{cnt} "{lbl}" not found in current run. '
-                    f'Verify presence or confirm removal.')
-                rec_num += 1
-
-        if n_moved > 0:
-            moved_items = [c for c in changes if c['type'] == 'MOVED']
-            for item in moved_items:
-                pdf.set_font('Helvetica', 'B', 7)
-                pdf.cell(6, 4, f'{rec_num}.')
-                pdf.set_font('Helvetica', '', 7)
-                pdf.multi_cell(
-                    0, 4,
-                    f'"{item["label"]}" moved {item["distance"]:.2f}m. '
-                    f'Verify relocation was intentional.')
-                rec_num += 1
+    recommendations = get_recommendations(changes)
+    if recommendations:
+        # Start new page if less than 25mm remain
+        if pdf.get_y() > 272:
+            pdf.add_page()
+        _render_recommendations(pdf, recommendations)
 
     # Save
     pdf.output(output_path)
@@ -410,7 +416,7 @@ def main():
         prev_path, curr_path = args.previous, args.current
     else:
         prev_path, curr_path = auto_detect_logs(args.log_dir)
-        print(f"Auto-detected logs:")
+        print("Auto-detected logs:")
         print(f"  Previous: {prev_path}")
         print(f"  Current:  {curr_path}")
 
