@@ -27,13 +27,8 @@ Built on ROS 2 Kilted with Nav2, RTAB-Map, and a RealSense depth camera mounted 
 
 ---
 
-## System Overview
-### Overall System
-![Low-level1 (1)](https://github.com/user-attachments/assets/9beeab37-a47d-476d-babd-11cc1e53d9dd)
-![Low-level2](https://github.com/user-attachments/assets/187aab44-ca94-4752-a919-435c7dc5e4b8)
-
-### Perception Pipeline
-<img width="1700" height="2254" alt="Perception Pipeline" src="https://github.com/user-attachments/assets/6ca4e9f3-5492-4d52-8073-e91f278fdbb6" />
+## High-Level System Overview
+![System_High-Level](https://github.com/user-attachments/assets/9a00c2bf-9203-49d5-88b7-02896099a1de)
 
 **Key capabilities:**
 - 3D SLAM using lidar point clouds (RTAB-Map with ICP registration)
@@ -356,7 +351,11 @@ Script -> Description
 
 ### Topic Flow
 
-// TODO: ADD DIAGRAM
+![Low-level1 (1)](https://github.com/user-attachments/assets/9beeab37-a47d-476d-babd-11cc1e53d9dd)
+![Low-level2](https://github.com/user-attachments/assets/187aab44-ca94-4752-a919-435c7dc5e4b8)
+
+### Perception Pipeline
+<img width="1700" height="2254" alt="Perception Pipeline" src="https://github.com/user-attachments/assets/6ca4e9f3-5492-4d52-8073-e91f278fdbb6" />
 
 ---
 
